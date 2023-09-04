@@ -1,12 +1,16 @@
-from sqlalchemy import (create_engine, func, ForeignKey,
+from sqlalchemy import (create_engine, MetaData, ForeignKey,
     Index, Table, Column, Integer, String)
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref, session
+from sqlalchemy.orm import relationship
 
-engine = create_engine('sqlite:///restaurants.db')
+convention = {
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+}    
 
-Base = declarative_base()
+metadata = MetaData(naming_convention=convention)
+
+Base = declarative_base(metadata = metadata)
 
 class Restaurant(Base):
     __tablename__ = 'restaurants'
@@ -23,6 +27,13 @@ class Restaurant(Base):
         return f"Restaurant {self.id}: " \
             + f"{self.name}, " \
             + f"Price {self.price}"
+    
+    def reviews(self):
+        return self.reviews
+
+    def customers(self):
+        return [review.customer for review in self.reviews]
+    
 
 class Customer(Base):
     __tablename__ = 'customers'
@@ -40,6 +51,12 @@ class Customer(Base):
             + f"{self.first_name}, " \
             + f"{self.last_name}"
     
+    def reviews(self):
+        return self.reviews
+
+    def restaurants(self):
+        return [review.restaurant for review in self.reviews]
+    
 class Review(Base):
     __tablename__ = 'reviews'
 
@@ -53,5 +70,12 @@ class Review(Base):
 
     def __repr__(self):
         return f'Review(id={self.id}, ' + \
+            f'customer={self.customer_id}, ' +\
             f'rating={self.star_rating}, ' + \
             f'restaurant_id={self.restaurant_id})'
+    
+    def customer(self):
+        return self.customer
+
+    def restaurant(self):
+        return self.restaurant
